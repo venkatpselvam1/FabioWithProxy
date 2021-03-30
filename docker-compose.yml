@@ -14,8 +14,11 @@ services:
     depends_on:
       - consul
       - fabio
+      - web
     networks:
       - app-network
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
 
   fabio:
     image: fabiolb/fabio
@@ -28,6 +31,19 @@ services:
       - app-network
     environment:
       - FABIO_REGISTRY_CONSUL_ADDR=consul:8500
+  web:
+    image: web-server
+    build:
+      context: .
+      dockerfile: node-server/Dockerfile
+    ports:
+      - "8080:3000"
+    networks:
+      - app-network
+    environment:
+      - SERVICE_TAGS=urlprefix-/web
+      - SERVICE_3000_CHECK_HTTP=/web
+      - SERVICE_3000_CHECK_INTERVAL=10s
 
 networks:
   app-network:
