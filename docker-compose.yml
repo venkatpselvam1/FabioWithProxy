@@ -1,0 +1,33 @@
+version: '3.7'
+services:
+  consul:
+    image: consul
+    ports:
+      - "8500:8500"
+      - "8300:8300"
+    networks:
+      - app-network
+
+  registrator:
+    command: consul://consul:8500
+    image: gliderlabs/registrator
+    depends_on:
+      - consul
+      - fabio
+    networks:
+      - app-network
+
+  fabio:
+    image: fabiolb/fabio
+    depends_on:
+      - consul
+    ports:
+      - "9999:9999"
+      - "9998:9998"
+    networks:
+      - app-network
+    environment:
+      - FABIO_REGISTRY_CONSUL_ADDR=consul:8500
+
+networks:
+  app-network:
