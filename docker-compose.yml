@@ -2,21 +2,19 @@ version: '3.7'
 services:
   consul:
     image: consul
+    networks:
+      - app-network
     ports:
       - "8500:8500"
       - "8300:8300"
-    networks:
-      - app-network
 
   registrator:
-    command: consul://consul:8500
-    image: gliderlabs/registrator
+    command: consul://127.0.0.1:8500
+    image: gliderlabs/registrator:v6
+    network_mode: host
     depends_on:
       - consul
       - fabio
-      - web
-    networks:
-      - app-network
     volumes:
       - "/var/run/docker.sock:/tmp/docker.sock"
 
@@ -31,19 +29,33 @@ services:
       - app-network
     environment:
       - FABIO_REGISTRY_CONSUL_ADDR=consul:8500
+
   web:
     image: web-server
     build:
       context: .
       dockerfile: node-server/Dockerfile
     ports:
-      - "8080:3000"
+      - "8090:3000"
     networks:
       - app-network
     environment:
       - SERVICE_TAGS=urlprefix-/web
       - SERVICE_3000_CHECK_HTTP=/web
       - SERVICE_3000_CHECK_INTERVAL=10s
+
+  web2:
+    image: nginx
+    networks:
+      - app-network
+    ports:
+      - "8080:80"
+    environment:
+      - SERVICE_NAME=test
+      - SERVICE_TAGS=urlprefix-/web
+      - SERVICE_CHECK_HTTP="http://127.0.0.1"
+      - SERVICE_CHECK_TLS_SKIP_VERIFY=false
+      - SERVICE_CHECK_INTERVAL=10s
 
 networks:
   app-network:
