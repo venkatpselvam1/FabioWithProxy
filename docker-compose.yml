@@ -30,32 +30,25 @@ services:
     environment:
       - FABIO_REGISTRY_CONSUL_ADDR=consul:8500
 
-  web:
-    image: web-server
-    build:
-      context: .
-      dockerfile: node-server/Dockerfile
+  grafana:
+    image: grafana/grafana:6.5.0
     ports:
-      - "8090:3000"
+      - "8070:3000"
     networks:
       - app-network
     environment:
-      - SERVICE_TAGS=urlprefix-/web
-      - SERVICE_3000_CHECK_HTTP=/web
+      - SERVICE_TAGS=urlprefix-/
+      - SERVICE_3000_CHECK_HTTP=/
       - SERVICE_3000_CHECK_INTERVAL=10s
 
-  web2:
-    image: nginx
+  mitmproxy:
+    image: mitmproxy/mitmproxy
+    container_name: mitmproxy
+    entrypoint: "mitmweb --web-host 0.0.0.0"
     networks:
       - app-network
     ports:
-      - "8080:80"
-    environment:
-      - SERVICE_NAME=test
-      - SERVICE_TAGS=urlprefix-/web
-      - SERVICE_CHECK_HTTP="http://127.0.0.1"
-      - SERVICE_CHECK_TLS_SKIP_VERIFY=false
-      - SERVICE_CHECK_INTERVAL=10s
+      - '8083:8081'
 
 networks:
   app-network:
