@@ -1,5 +1,17 @@
 version: '3.7'
 services:
+  mitmproxy:
+    image: mitmproxy/mitmproxy
+    container_name: mitmproxy
+    entrypoint: "mitmweb --web-host 0.0.0.0 --mode transparent -s /redirect-to-fabio.py"
+    volumes:
+      - ./redirect-to-fabio.py:/redirect-to-fabio.py
+    networks:
+      - app-network
+    ports:
+      - '8083:8081'
+      - '9999:8080'
+
   consul:
     image: consul
     networks:
@@ -23,32 +35,34 @@ services:
     depends_on:
       - consul
     ports:
-      - "9999:9999"
+      # - "9999:9999"
       - "9998:9998"
     networks:
       - app-network
     environment:
       - FABIO_REGISTRY_CONSUL_ADDR=consul:8500
 
-  grafana:
-    image: grafana/grafana:6.5.0
+  docker-gs:
+    image: docker/getting-started
     ports:
-      - "8070:3000"
+      - "8091:80"
     networks:
       - app-network
     environment:
       - SERVICE_TAGS=urlprefix-/
-      - SERVICE_3000_CHECK_HTTP=/
-      - SERVICE_3000_CHECK_INTERVAL=10s
+      - SERVICE_80_CHECK_HTTP=/
+      - SERVICE_80_CHECK_INTERVAL=10s
 
-  mitmproxy:
-    image: mitmproxy/mitmproxy
-    container_name: mitmproxy
-    entrypoint: "mitmweb --web-host 0.0.0.0"
+  nginx:
+    image: nginx
+    ports:
+      - "8093:80"
     networks:
       - app-network
-    ports:
-      - '8083:8081'
+    environment:
+      - SERVICE_TAGS=urlprefix-/nginx strip=/nginx
+      - SERVICE_80_CHECK_HTTP=/
+      - SERVICE_80_CHECK_INTERVAL=10s
 
 networks:
   app-network:
